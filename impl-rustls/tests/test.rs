@@ -10,8 +10,8 @@ fn connect_bad_hostname() {
             .downcast_ref()
             .expect("rustls::TLSError");
         match err {
-            rustls::Error::InvalidCertificateData(e) => {
-                assert_eq!(e, "invalid peer certificate: CertNotValidForName");
+            rustls::Error::InvalidCertificate(e) => {
+                assert_eq!(e, &rustls::CertificateError::NotValidForName);
             }
             err => panic!("wrong error: {:?}", err),
         }
