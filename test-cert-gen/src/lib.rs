@@ -107,8 +107,8 @@ fn gen_root_ca() -> CertAndPrivateKey {
     let cert = fs::read_to_string(&certfile).unwrap();
     let key = fs::read_to_string(&keyfile).unwrap();
 
-    assert_eq!(1, pem::parse_many(cert.as_bytes()).len());
-    assert_eq!(1, pem::parse_many(key.as_bytes()).len());
+    assert_eq!(1, pem::parse_many(cert.as_bytes()).unwrap().len());
+    assert_eq!(1, pem::parse_many(key.as_bytes()).unwrap().len());
 
     CertAndPrivateKey {
         cert: Cert::from_pem(&cert),
@@ -220,8 +220,8 @@ fn gen_cert_for_domain(domain: &str, ca: &CertAndPrivateKey) -> CertAndPrivateKe
     let cert = fs::read_to_string(&cert_path).unwrap();
 
     // verify
-    assert_eq!(1, pem::parse_many(cert.as_bytes()).len());
-    assert_eq!(1, pem::parse_many(key.as_bytes()).len());
+    assert_eq!(1, pem::parse_many(cert.as_bytes()).unwrap().len());
+    assert_eq!(1, pem::parse_many(key.as_bytes()).unwrap().len());
 
     CertAndPrivateKey {
         cert: Cert::from_pem(&cert),

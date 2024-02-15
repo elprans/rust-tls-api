@@ -27,12 +27,12 @@ impl Cert {
 
     /// Construct from PEM-DER-encoded.
     pub fn from_pem(cert_der_pem: impl AsRef<[u8]>) -> Cert {
-        let pem = pem::parse_many(cert_der_pem.as_ref());
+        let pem = pem::parse_many(cert_der_pem.as_ref()).expect("PEM to be valid");
         let count = pem.len();
         let mut certs: Vec<Cert> = pem
             .into_iter()
-            .flat_map(|p| match p.tag == "CERTIFICATE" {
-                true => Some(Self::from_der(p.contents)),
+            .flat_map(|p| match p.tag() == "CERTIFICATE" {
+                true => Some(Self::from_der(p.contents())),
                 false => None,
             })
             .collect();
@@ -59,10 +59,10 @@ impl Cert {
 
     /// Convert a certificate to PEM format.
     pub fn to_pem(&self) -> String {
-        pem::encode(&pem::Pem {
-            tag: "CERTIFICATE".to_owned(),
-            contents: self.0.clone(),
-        })
+        pem::encode(&pem::Pem::new(
+            "CERTIFICATE",
+            self.0.clone(),
+        ))
     }
 }
 
@@ -90,12 +90,12 @@ impl PrivateKey {
     ///
     /// This operation returns an error if PEM file contains zero or more than one certificate.
     pub fn from_pem(key_pem: impl AsRef<[u8]>) -> PrivateKey {
-        let pem = pem::parse_many(key_pem.as_ref());
+        let pem = pem::parse_many(key_pem.as_ref()).expect("key PEM to be valid");
         let count = pem.len();
         let mut keys: Vec<PrivateKey> = pem
             .into_iter()
-            .flat_map(|p| match p.tag.as_ref() {
-                "PRIVATE KEY" | "RSA PRIVATE KEY" => Some(Self::from_der(p.contents)),
+            .flat_map(|p| match p.tag().as_ref() {
+                "PRIVATE KEY" | "RSA PRIVATE KEY" => Some(Self::from_der(p.contents())),
                 _ => None,
             })
             .collect();
@@ -121,16 +121,13 @@ impl PrivateKey {
     /// without verifying that the private key is actually RSA.
     #[doc(hidden)]
     pub fn to_pem_incorrect(&self) -> String {
-        pem::encode(&pem::Pem {
-            tag: "RSA PRIVATE KEY".to_owned(),
-            contents: self.0.clone(),
-        })
+        pem::encode(&pem::Pem::new("RSA PRIVATE KEY", self.0.clone()))
     }
 }
 
 /// Parse PEM file into a pair of certificate and private key.
 pub fn pem_to_cert_key_pair(pem: &[u8]) -> (Cert, PrivateKey) {
-    let entries = pem::parse_many(pem);
+    let entries = pem::parse_many(pem).expect("PEM to be valid");
     if entries.len() != 2 {
         panic!(
             "PEM file should contain certificate and private key entries, got {} entries",
